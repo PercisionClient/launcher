@@ -1,0 +1,7 @@
+sources:
+    - https://github.com/diamondburned/gtkcord3
+image: nixos/unstable
+environment:
+    GOPATH: '/tmp/gopath/'
+tasks:
+    - build: 'cd gtkcord3/ && nix-shell --run "go build -v ."'

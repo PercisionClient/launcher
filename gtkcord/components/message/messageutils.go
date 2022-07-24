@@ -1,0 +1,52 @@
+package message
+
+import (
+	"time"
+
+	"github.com/diamondburned/arikawa/v2/discord"
+)
+
+func injectMessage(m *Messages, w *Message) {
+	w.OnUserClick = m.onAvatarClick
+	w.OnRightClick = m.onRightClick
+}
+
+func shouldCondense(msgs []*Message, msg, lastSameAuthor *Message) bool {
+	if len(msgs) == 0 {
+		return false
+	}
+
+	if lastSameAuthor == nil {
+		return false
+	}
+
+	var latest = msgs[len(msgs)-1]
+
+	if msg.AuthorID != latest.AuthorID || msg.Author != latest.Author {
+		return false
+	}
+
+	return msg.Timestamp.Sub(lastSameAuthor.Timestamp) < 5*time.Minute
+}
+
+func lastMessageFrom(msgs []*Message, author discord.UserID) *Message {
+	for i := len(msgs) - 1; i >= 0; i-- {
+		if msg := msgs[i]; msg.AuthorID == author && !msg.Condensed {
+			return msg
+		}
+	}
+	return nil
+}
+
+func tryCondense(msgs []*Message, msg *Message) {
+	if len(msgs) == 0 {
+		return
+	}
+
+	last := lastMessageFrom(msgs, msg.AuthorID)
+
+	if shouldCondense(msgs, msg, last) {
+		msg.setOffset(last)
+		msg.SetCondensed(true)
+	}
+}
